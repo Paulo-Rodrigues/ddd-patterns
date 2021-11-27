@@ -1,34 +1,67 @@
 class CPF
-  def self.validate(cpf = nil)
-    nulos = %w[12345678909 11111111111 22222222222 33333333333 44444444444 55555555555 66666666666 77777777777
-               88888888888 99999999999 00000000000 12345678909]
-    return false if cpf.nil?
+  def initialize(cpf)
+    @cpf = cpf
+  end
 
-    valor = cpf.scan /[0-9]/
+  NULOS = %w[12345678909 11111111111 22222222222 33333333333 44444444444 55555555555 66666666666 77777777777 88888888888 99999999999 00000000000]
 
-    if valor.length == 11 && !nulos.member?(valor.join)
+  def self.validate(cpf)
+    new(cpf).valid?
+  end
 
-      valor = valor.collect(&:to_i)
+  def valid?
+    return false if @cpf.nil?
 
-      # faz a soma
-      soma = (10 * valor[0]) + (9 * valor[1]) + (8 * valor[2]) + (7 * valor[3]) + (6 * valor[4]) + (5 * valor[5]) + (4 * valor[6]) + (3 * valor[7]) + (2 * valor[8])
+    valid_verified_digits? ? true : false
+  end
 
-      soma -= (11 * (soma / 11))
+  private
 
-      # resultado
-      resultado1 = soma.zero? || (soma == 1) ? 0 : 11 - soma
+  attr_reader :cpf
 
-      if resultado1 == valor[9]
-        soma = (valor[0] * 11) + (valor[1] * 10) + (valor[2] * 9) + (valor[3] * 8) + (valor[4] * 7) + (valor[5] * 6) + (valor[6] * 5) + (valor[7] * 4) + (valor[8] * 3) + (valor[9] * 2)
+  def cpf_numbers
+    @cpf.scan /[0-9]/
+  end
 
-        soma -= (11 * (soma / 11))
+  def cpf_not_null?
+    cpf_numbers.length == 11 && !NULOS.member?(cpf_numbers.join)
+  end
 
-        resultado2 = soma.zero? || (soma == 1) ? 0 : 11 - soma
+  def cpf_numbers_to_integer
+    cpf_numbers.map(&:to_i)
+  end
 
-        return true if resultado2 == valor[10]
+  def first_sum
+    valor = cpf_numbers_to_integer
+    soma = (10 * valor[0]) + (9 * valor[1]) + (8 * valor[2]) + (7 * valor[3]) + (6 * valor[4]) + (5 * valor[5]) + (4 * valor[6]) + (3 * valor[7]) + (2 * valor[8])
 
-      end
-    end
-    false # CPF inválido
+    difference(soma)
+  end
+
+  def second_sum
+    valor = cpf_numbers_to_integer
+    soma = (valor[0] * 11) + (valor[1] * 10) + (valor[2] * 9) + (valor[3] * 8) + (valor[4] * 7) + (valor[5] * 6) + (valor[6] * 5) + (valor[7] * 4) + (valor[8] * 3) + (valor[9] * 2)
+    
+    difference(soma)
+  end
+
+  def difference(soma)
+    soma - (soma / 11) * 11
+  end
+
+  def result(soma)
+    soma.zero? || (soma == 1) ? 0 : 11 - soma
+  end
+
+  def verified_first_digit?
+    result(first_sum) == cpf_numbers_to_integer[9]
+  end
+
+  def verified_second_digit?
+    result(second_sum) == cpf_numbers_to_integer[10]
+  end
+
+  def valid_verified_digits?
+    cpf_not_null? && verified_first_digit? && verified_second_digit?
   end
 end
